@@ -2,14 +2,14 @@ import type { WebViewProps } from 'react-native-webview';
 
 export interface BridgeMessage<T = unknown> {
   type: string;
-  payload?: T;
+  payload?: T | null;
 }
 
 /** Which side of the bridge produced the error */
 export type BridgeErrorSource =
-  | 'rn-to-webview'    // error sending a message from RN into the WebView
-  | 'webview-to-rn'    // error receiving / handling a message from the WebView
-  | 'webview-internal'; // a handler registered with Bridge.on() threw inside the WebView
+  | 'rn-to-webview'
+  | 'webview-to-rn'
+  | 'webview-internal';
 
 export interface BridgeError {
   source: BridgeErrorSource;
@@ -45,11 +45,28 @@ export type MessageHandler<T = unknown> = (payload: T, type: string) => void;
 
 export type Unsubscribe = () => void;
 
+export interface RequestOptions {
+  /** Milliseconds before the request times out. Defaults to 10000. */
+  timeout?: number;
+}
+
 export interface WebViewBridgeRef {
   /** Send a typed message to the WebView */
   sendMessage: <T = unknown>(type: string, payload?: T) => void;
+  /**
+   * Send a message to the WebView and await a reply from the web-side handler.
+   * The web-side handler receives a `reply` function as its third argument.
+   * Rejects if no reply arrives within `options.timeout` ms (default 10 000 ms).
+   */
+  sendRequest: <Req = unknown, Res = unknown>(
+    type: string,
+    payload?: Req,
+    options?: RequestOptions,
+  ) => Promise<Res>;
   /** Subscribe to messages from the WebView. Returns an unsubscribe function. */
   on: <T = unknown>(type: string, handler: MessageHandler<T>) => Unsubscribe;
+  /** Like `on`, but automatically unsubscribes after the first matching message. */
+  once: <T = unknown>(type: string, handler: MessageHandler<T>) => Unsubscribe;
   /** Unsubscribe a specific handler */
   off: <T = unknown>(type: string, handler: MessageHandler<T>) => void;
 }
