@@ -4,7 +4,8 @@ A lightweight, fully-typed bidirectional message bridge between React Native and
 
 ## Preview
 
-<video src="assets/rn-web-view-example.mp4" width="320" controls autoplay loop muted></video>
+[Watch the demo](assets/rn-web-view-example.mp4)
+
 
 ## Features
 
