@@ -2,15 +2,16 @@
   "name": "expo-webview-bridge",
   "version": "0.1.0",
   "description": "Bidirectional message bridge between React Native and WebView for Expo",
-  "main": "src/index.ts",
-  "types": "src/index.ts",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "files": [
-    "src",
-    "dist"
+    "dist",
+    "src"
   ],
   "scripts": {
-    "build": "tsc --outDir dist",
-    "type-check": "tsc --noEmit"
+    "build": "tsc",
+    "type-check": "tsc --noEmit",
+    "prepare": "npm run build"
   },
   "peerDependencies": {
     "react": ">=18.0.0",
@@ -19,6 +20,7 @@
   },
   "devDependencies": {
     "@types/react": "^19.1.0",
+    "react-native-webview": "^13.16.1",
     "typescript": "^5.4.0"
   },
   "keywords": [
@@ -28,5 +30,14 @@
     "bridge",
     "messaging"
   ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/tewarig/expo-webview-bridge.git",
+    "directory": "packages/expo-webview-bridge"
+  },
+  "homepage": "https://github.com/tewarig/expo-webview-bridge#readme",
+  "bugs": {
+    "url": "https://github.com/tewarig/expo-webview-bridge/issues"
+  },
   "license": "MIT"
 }

@@ -117,7 +117,7 @@ export default function App() {
           onMessage={handleMessage}
           onReady={handleReady}
           onClose={handleClose}
-          onError={handleError}
+          onBridgeError={handleError}
         />
       )}
     </View>

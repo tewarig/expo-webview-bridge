@@ -83,8 +83,9 @@ export interface WebViewBridgeProps
    * Called whenever the bridge encounters an error in either direction.
    * Covers: serialization failures, parse errors, handler exceptions, and
    * errors reported back from Bridge.on() callbacks inside the WebView.
+   * Named onBridgeError to avoid conflict with WebView's native onError (page load errors).
    */
-  onError?: (error: BridgeError) => void;
+  onBridgeError?: (error: BridgeError) => void;
   /** Extra JS to inject alongside the bridge script */
   injectedJavaScriptBeforeContentLoaded?: string;
 }

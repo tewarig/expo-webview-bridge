@@ -16,7 +16,7 @@ export const WebViewBridge = forwardRef<WebViewBridgeRef, WebViewBridgeProps>(
       onMessage,
       onReady,
       onClose,
-      onError,
+      onBridgeError,
       initialParams,
       webStorage,
       injectedJavaScriptBeforeContentLoaded,
@@ -26,11 +26,11 @@ export const WebViewBridge = forwardRef<WebViewBridgeRef, WebViewBridgeProps>(
   ) {
     // Use a ref so callbacks inside the hook never go stale without re-creating
     // the hook's memoised functions.
-    const onErrorRef = useRef(onError);
-    onErrorRef.current = onError;
+    const onBridgeErrorRef = useRef(onBridgeError);
+    onBridgeErrorRef.current = onBridgeError;
 
     const { webViewRef, sendMessage, on, off, dispatch, handleRawMessage } =
-      useWebViewBridge(onErrorRef);
+      useWebViewBridge(onBridgeErrorRef);
 
     useImperativeHandle(ref, () => ({ sendMessage, on, off }), [
       sendMessage,
@@ -75,14 +75,14 @@ export const WebViewBridge = forwardRef<WebViewBridgeRef, WebViewBridgeProps>(
         }
 
         if (msg.type === ERROR_TYPE) {
-          onErrorRef.current?.(msg.payload as BridgeError);
+          onBridgeErrorRef.current?.(msg.payload as BridgeError);
           return;
         }
 
         dispatch(msg.type, msg.payload);
         onMessage?.(msg.type, msg.payload);
       },
-      [handleRawMessage, dispatch, onMessage, onReady, onClose, onErrorRef],
+      [handleRawMessage, dispatch, onMessage, onReady, onClose, onBridgeErrorRef],
     );
 
     return (
