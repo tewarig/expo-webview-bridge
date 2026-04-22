@@ -61,13 +61,9 @@ export interface WebViewBridgeProps
    */
   initialParams?: Record<string, unknown>;
   /**
-   * Query params appended to the source URI.
-   * Only applied when source is a { uri } object — ignored for inline HTML sources.
-   */
-  sourceParams?: Record<string, string>;
-  /**
    * Cookies, localStorage, and sessionStorage entries written into the WebView
-   * before the page loads.
+   * after the page loads. Applied via injectedJavaScript so it doesn't block
+   * bridge initialisation.
    */
   webStorage?: WebStorageConfig;
   /** Extra JS to inject alongside the bridge script */

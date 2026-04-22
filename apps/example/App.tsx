@@ -14,14 +14,8 @@ const HTML = `
 <body style="font-family:sans-serif;padding:20px">
   <h2>WebView side</h2>
 
-  <p><strong>Bridge.params:</strong></p>
+  <p><strong>Bridge.params (available immediately):</strong></p>
   <pre id="params" style="background:#f4f4f4;padding:8px;border-radius:4px"></pre>
-
-  <p><strong>Cookies:</strong></p>
-  <pre id="cookies" style="background:#f4f4f4;padding:8px;border-radius:4px"></pre>
-
-  <p><strong>localStorage:</strong></p>
-  <pre id="ls" style="background:#f4f4f4;padding:8px;border-radius:4px"></pre>
 
   <button onclick="Bridge.send('greeting', { text: 'Hello from the web!' })">
     Send to React Native
@@ -29,20 +23,26 @@ const HTML = `
   <button onclick="Bridge.close()" style="margin-left:8px;color:red">
     Close WebView
   </button>
+  <button onclick="readStorage()" style="margin-left:8px">
+    Read storage
+  </button>
 
   <p id="msg">Waiting for RN message…</p>
+  <pre id="storage" style="background:#f4f4f4;padding:8px;border-radius:4px"></pre>
 
   <script>
+    // Bridge.params is available synchronously — injected before page load
     document.getElementById('params').textContent =
       JSON.stringify(Bridge.params, null, 2);
 
-    document.getElementById('cookies').textContent = document.cookie || '(none)';
-
-    document.getElementById('ls').textContent =
-      JSON.stringify({
-        authToken:    localStorage.getItem('authToken'),
-        preferredLang: localStorage.getItem('preferredLang'),
+    // webStorage is applied post-load — read it on demand
+    function readStorage() {
+      document.getElementById('storage').textContent = JSON.stringify({
+        cookie:    document.cookie,
+        authToken: localStorage.getItem('authToken'),
+        lastRoute: sessionStorage.getItem('lastRoute'),
       }, null, 2);
+    }
 
     Bridge.on('ping', function(payload) {
       document.getElementById('msg').textContent =
@@ -59,19 +59,13 @@ const INITIAL_PARAMS = {
   apiBase: 'https://api.example.com',
 };
 
-const SOURCE_PARAMS = {
-  ref: 'rn-app',
-  version: '1.0.0',
-};
-
 const WEB_STORAGE = {
   cookies: [
     { name: 'session', value: 'xyz-session-token', path: '/', maxAge: 3600 },
     { name: 'locale',  value: 'en-IN',             path: '/' },
   ],
   localStorage: {
-    authToken:     'Bearer eyJhbGciOiJIUzI1NiJ9',
-    preferredLang: 'en',
+    authToken: 'Bearer eyJhbGciOiJIUzI1NiJ9',
   },
   sessionStorage: {
     lastRoute: '/dashboard',
@@ -115,7 +109,6 @@ export default function App() {
           style={styles.webview}
           source={{ html: HTML }}
           initialParams={INITIAL_PARAMS}
-          sourceParams={SOURCE_PARAMS}
           webStorage={WEB_STORAGE}
           onMessage={handleMessage}
           onReady={handleReady}

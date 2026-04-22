@@ -1,8 +1,8 @@
 import React, { forwardRef, useImperativeHandle, useCallback } from 'react';
 import { WebView } from 'react-native-webview';
-import type { WebViewMessageEvent, WebViewProps } from 'react-native-webview';
+import type { WebViewMessageEvent } from 'react-native-webview';
 import { BRIDGE_SCRIPT } from './bridgeScript';
-import { buildStorageScript, appendQueryParams } from './storageScript';
+import { buildStorageScript } from './storageScript';
 import { useWebViewBridge } from './useWebViewBridge';
 import type { WebViewBridgeProps, WebViewBridgeRef } from './types';
 
@@ -16,10 +16,8 @@ export const WebViewBridge = forwardRef<WebViewBridgeRef, WebViewBridgeProps>(
       onReady,
       onClose,
       initialParams,
-      sourceParams,
       webStorage,
       injectedJavaScriptBeforeContentLoaded,
-      source,
       ...props
     },
     ref,
@@ -33,34 +31,26 @@ export const WebViewBridge = forwardRef<WebViewBridgeRef, WebViewBridgeProps>(
       off,
     ]);
 
-    // Append sourceParams to the URI when source is a { uri } object
-    const resolvedSource: WebViewProps['source'] =
-      sourceParams &&
-      source &&
-      typeof source === 'object' &&
-      'uri' in source &&
-      source.uri
-        ? { ...source, uri: appendQueryParams(source.uri, sourceParams) }
-        : source;
-
-    // Build the full injection script in order:
-    // 1. webStorage (cookies / localStorage / sessionStorage)
-    // 2. initialParams  → window.__bridgeInitialParams (read by Bridge.params)
-    // 3. bridge script  → sets up window.Bridge
-    // 4. caller's extra script
-    const storageScript = webStorage ? buildStorageScript(webStorage) : '';
-    const paramsScript  = initialParams
+    // ── Pre-load script ──────────────────────────────────────────────────────
+    // Only initialParams + bridge run here so the bridge is always guaranteed
+    // to initialise before the page's own scripts execute.
+    const paramsScript = initialParams
       ? `window.__bridgeInitialParams = ${JSON.stringify(initialParams)};`
       : '';
 
-    const combinedScript = [
-      storageScript,
+    const preloadScript = [
       paramsScript,
       BRIDGE_SCRIPT,
       injectedJavaScriptBeforeContentLoaded,
     ]
       .filter(Boolean)
       .join('\n');
+
+    // ── Post-load script ─────────────────────────────────────────────────────
+    // webStorage runs after the page loads via injectedJavaScript, which is
+    // more reliable for localStorage / sessionStorage / cookies because the
+    // page has a proper browsing context by then.
+    const postloadScript = webStorage ? buildStorageScript(webStorage) : undefined;
 
     const handleMessage = useCallback(
       (event: WebViewMessageEvent) => {
@@ -77,10 +67,7 @@ export const WebViewBridge = forwardRef<WebViewBridgeRef, WebViewBridgeProps>(
           return;
         }
 
-        // fire hook-level subscriptions
         dispatch(msg.type, msg.payload);
-
-        // fire prop-level callback
         onMessage?.(msg.type, msg.payload);
       },
       [handleRawMessage, dispatch, onMessage, onReady, onClose],
@@ -90,8 +77,8 @@ export const WebViewBridge = forwardRef<WebViewBridgeRef, WebViewBridgeProps>(
       <WebView
         ref={webViewRef}
         {...props}
-        source={resolvedSource}
-        injectedJavaScriptBeforeContentLoaded={combinedScript}
+        injectedJavaScriptBeforeContentLoaded={preloadScript}
+        injectedJavaScript={postloadScript}
         onMessage={handleMessage}
       />
     );
