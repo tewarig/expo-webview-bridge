@@ -1,4 +1,4 @@
-import React, { forwardRef, useImperativeHandle, useCallback, useRef } from 'react';
+import React, { forwardRef, useImperativeHandle, useCallback, useRef, useMemo } from 'react';
 import { WebView } from 'react-native-webview';
 import type { WebViewMessageEvent } from 'react-native-webview';
 import { BRIDGE_SCRIPT } from './bridgeScript';
@@ -6,9 +6,10 @@ import { buildStorageScript } from './storageScript';
 import { useWebViewBridge } from './useWebViewBridge';
 import type { BridgeError, WebViewBridgeProps, WebViewBridgeRef } from './types';
 
-const READY_TYPE  = '__bridge_ready__';
-const CLOSE_TYPE  = '__bridge_close__';
-const ERROR_TYPE  = '__bridge_error__';
+const READY_TYPE = '__bridge_ready__';
+const CLOSE_TYPE = '__bridge_close__';
+const ERROR_TYPE = '__bridge_error__';
+const REPLY_TYPE = '__bridge_reply__';
 
 export const WebViewBridge = forwardRef<WebViewBridgeRef, WebViewBridgeProps>(
   function WebViewBridge(
@@ -24,40 +25,51 @@ export const WebViewBridge = forwardRef<WebViewBridgeRef, WebViewBridgeProps>(
     },
     ref,
   ) {
-    // Use a ref so callbacks inside the hook never go stale without re-creating
-    // the hook's memoised functions.
+    // Store callbacks in refs so handleMessage never goes stale and never needs
+    // to be recreated when the parent re-renders with new inline functions.
     const onBridgeErrorRef = useRef(onBridgeError);
     onBridgeErrorRef.current = onBridgeError;
+    const onMessageRef = useRef(onMessage);
+    onMessageRef.current = onMessage;
+    const onReadyRef = useRef(onReady);
+    onReadyRef.current = onReady;
+    const onCloseRef = useRef(onClose);
+    onCloseRef.current = onClose;
 
-    const { webViewRef, sendMessage, on, off, dispatch, handleRawMessage } =
-      useWebViewBridge(onBridgeErrorRef);
-
-    useImperativeHandle(ref, () => ({ sendMessage, on, off }), [
+    const {
+      webViewRef,
       sendMessage,
+      sendRequest,
       on,
+      once,
+      off,
+      dispatch,
+      handleRawMessage,
+      flushQueue,
+      resolveRequest,
+    } = useWebViewBridge(onBridgeErrorRef);
+
+    useImperativeHandle(ref, () => ({ sendMessage, sendRequest, on, once, off }), [
+      sendMessage,
+      sendRequest,
+      on,
+      once,
       off,
     ]);
 
-    // ── Pre-load script ──────────────────────────────────────────────────────
-    // Only initialParams + bridge run here so the bridge is always guaranteed
-    // to initialise before the page's own scripts execute.
-    const paramsScript = initialParams
-      ? `window.__bridgeInitialParams = ${JSON.stringify(initialParams)};`
-      : '';
+    const preloadScript = useMemo(() => {
+      const paramsScript = initialParams
+        ? `window.__bridgeInitialParams = ${JSON.stringify(initialParams)};`
+        : '';
+      return [paramsScript, BRIDGE_SCRIPT, injectedJavaScriptBeforeContentLoaded]
+        .filter(Boolean)
+        .join('\n');
+    }, [initialParams, injectedJavaScriptBeforeContentLoaded]);
 
-    const preloadScript = [
-      paramsScript,
-      BRIDGE_SCRIPT,
-      injectedJavaScriptBeforeContentLoaded,
-    ]
-      .filter(Boolean)
-      .join('\n');
-
-    // ── Post-load script ─────────────────────────────────────────────────────
-    // webStorage runs after the page loads via injectedJavaScript, which is
-    // more reliable for localStorage / sessionStorage / cookies because the
-    // page has a proper browsing context by then.
-    const postloadScript = webStorage ? buildStorageScript(webStorage) : undefined;
+    const postloadScript = useMemo(
+      () => (webStorage ? buildStorageScript(webStorage) : undefined),
+      [webStorage],
+    );
 
     const handleMessage = useCallback(
       (event: WebViewMessageEvent) => {
@@ -65,12 +77,13 @@ export const WebViewBridge = forwardRef<WebViewBridgeRef, WebViewBridgeProps>(
         if (!msg) return;
 
         if (msg.type === READY_TYPE) {
-          onReady?.();
+          flushQueue();
+          onReadyRef.current?.();
           return;
         }
 
         if (msg.type === CLOSE_TYPE) {
-          onClose?.();
+          onCloseRef.current?.();
           return;
         }
 
@@ -79,10 +92,16 @@ export const WebViewBridge = forwardRef<WebViewBridgeRef, WebViewBridgeProps>(
           return;
         }
 
+        if (msg.type === REPLY_TYPE) {
+          const { requestId, payload } = msg.payload as { requestId: string; payload: unknown };
+          resolveRequest(requestId, payload);
+          return;
+        }
+
         dispatch(msg.type, msg.payload);
-        onMessage?.(msg.type, msg.payload);
+        onMessageRef.current?.(msg.type, msg.payload);
       },
-      [handleRawMessage, dispatch, onMessage, onReady, onClose, onBridgeErrorRef],
+      [handleRawMessage, dispatch, flushQueue, resolveRequest],
     );
 
     return (

@@ -1,15 +1,23 @@
 {
   "name": "@gaurav-tewari/expo-webview-bridge",
-  "version": "0.1.0",
+  "version": "0.3.0",
   "description": "Bidirectional message bridge between React Native and WebView for Expo",
   "main": "dist/index.js",
+  "module": "dist/esm/index.js",
   "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/esm/index.js",
+      "require": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
   "files": [
     "dist",
     "src"
   ],
   "scripts": {
-    "build": "tsc",
+    "build": "tsc -p tsconfig.json && tsc -p tsconfig.esm.json",
     "type-check": "tsc --noEmit",
     "prepare": "npm run build"
   },

@@ -6,6 +6,7 @@ export type {
   BridgeErrorSource,
   MessageHandler,
   Unsubscribe,
+  RequestOptions,
   WebViewBridgeRef,
   WebViewBridgeProps,
   CookieConfig,

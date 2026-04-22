@@ -5,8 +5,12 @@
  *   Bridge.send(type, payload)  — send a message to React Native
  *   Bridge.close()              — signal React Native to close/unmount the WebView
  *   Bridge.on(type, handler)    — subscribe to messages from React Native (returns unsubscribe fn)
+ *   Bridge.once(type, handler)  — subscribe for a single message, then auto-unsubscribe
  *   Bridge.off(type, handler)   — unsubscribe a handler
  *   Bridge.on('*', handler)     — wildcard: receive all message types
+ *
+ * Handlers receive (payload, type, reply?) where reply is only present when the
+ * RN side called sendRequest — call reply(responsePayload) to resolve the Promise.
  */
 export const BRIDGE_SCRIPT = `
 (function () {
@@ -25,14 +29,20 @@ export const BRIDGE_SCRIPT = `
     _handlers[type] = _handlers[type].filter(function (h) { return h !== fn; });
   }
 
-  function _dispatch(type, payload) {
+  function _dispatch(type, payload, requestId) {
     var typed = (_handlers[type] || []).slice();
     var wild  = (_handlers['*']   || []).slice();
+
+    var reply = requestId
+      ? function (responsePayload) {
+          _send('__bridge_reply__', { requestId: requestId, payload: responsePayload });
+        }
+      : undefined;
+
     typed.concat(wild).forEach(function (h) {
       try {
-        h(payload, type);
+        h(payload, type, reply);
       } catch (e) {
-        // Report handler exceptions back to React Native via onError
         _send('__bridge_error__', {
           source: 'webview-internal',
           message: '[Bridge] handler threw: ' + (e && e.message ? e.message : String(e)),
@@ -70,14 +80,30 @@ export const BRIDGE_SCRIPT = `
       return function () { _removeHandler(type, handler); };
     },
 
+    /** Like on(), but automatically unsubscribes after the first matching message. */
+    once: function (type, handler) {
+      function wrapper(payload, t, reply) {
+        _removeHandler(type, wrapper);
+        handler(payload, t, reply);
+      }
+      _addHandler(type, wrapper);
+      return function () { _removeHandler(type, wrapper); };
+    },
+
     /** Remove a specific handler */
     off: function (type, handler) {
       _removeHandler(type, handler);
     },
-
-    /** @internal — called by the RN side to push messages into the WebView */
-    _dispatch: _dispatch,
   };
+
+  // _dispatch is non-enumerable so it does not appear in Bridge's public surface,
+  // while still being callable by injectJavaScript from the RN side.
+  Object.defineProperty(window.Bridge, '_dispatch', {
+    value: _dispatch,
+    enumerable: false,
+    writable: false,
+    configurable: false,
+  });
 
   // Notify React Native that the bridge is ready
   _send('__bridge_ready__', null);
