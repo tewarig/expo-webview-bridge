@@ -2,6 +2,12 @@
 
 A lightweight, fully-typed bidirectional message bridge between React Native and WebView for Expo. Send typed messages in both directions, pass initial config, set cookies and storage — all with a clean React API.
 
+## Preview
+
+<img src="https://github.com/tewarig/expo-webview-bridge/blob/main/assets/rn-web-view-example.gif?raw=true" width="320" alt="@gaurav-tewari/expo-webview-bridge demo" />
+
+
+
 ## Features
 
 - **Bidirectional messaging** — RN → WebView and WebView → RN with typed payloads

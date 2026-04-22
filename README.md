@@ -1,10 +1,10 @@
-# @tewarig/expo-webview-bridge
+# @gaurav-tewari/expo-webview-bridge
 
 A lightweight, fully-typed bidirectional message bridge between React Native and WebView for Expo. Send typed messages in both directions, pass initial config, set cookies and storage — all with a clean React API.
 
 ## Preview
 
-<img src="assets/rn-web-view-example.gif" width="320" alt="@tewarig/expo-webview-bridge demo" />
+<img src="assets/rn-web-view-example.gif" width="320" alt="@gaurav-tewari/expo-webview-bridge demo" />
 
 <video src="assets/rn-web-view-example.mp4" width="320" controls autoplay loop muted></video>
 
@@ -30,7 +30,7 @@ npx expo install react-native-webview
 Then add the library:
 
 ```bash
-npm install @tewarig/@tewarig/expo-webview-bridge
+npm install @tewarig/@gaurav-tewari/expo-webview-bridge
 ```
 
 > **Expo Go** — `react-native-webview` requires native code and is not bundled in the standard Expo Go client. Use a [development build](https://docs.expo.dev/develop/development-builds/introduction/) (`npx expo run:ios` / `npx expo run:android`) to test.
@@ -40,7 +40,7 @@ npm install @tewarig/@tewarig/expo-webview-bridge
 ```tsx
 import React, { useRef, useState } from 'react';
 import { View, Button } from 'react-native';
-import { WebViewBridge, WebViewBridgeRef } from '@tewarig/expo-webview-bridge';
+import { WebViewBridge, WebViewBridgeRef } from '@gaurav-tewari/expo-webview-bridge';
 
 const HTML = `
   <button onclick="Bridge.send('hello', { from: 'web' })">Send to RN</button>
@@ -277,9 +277,9 @@ type BridgeErrorSource =
 This repository is a monorepo used for development and testing.
 
 ```
-@tewarig/expo-webview-bridge/
+@gaurav-tewari/expo-webview-bridge/
 ├── packages/
-│   └── @tewarig/expo-webview-bridge/   # The library
+│   └── @gaurav-tewari/expo-webview-bridge/   # The library
 │       └── src/
 │           ├── index.ts
 │           ├── types.ts

@@ -1,6 +1,5 @@
 {
   "name": "expo-webview-bridge-monorepo",
-  "private": true,
   "workspaces": [
     "packages/*",
     "apps/*"
