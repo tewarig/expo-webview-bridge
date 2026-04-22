@@ -1,7 +1,9 @@
 /**
  * Injected into the WebView before content loads.
  * Exposes window.Bridge on the web side with:
+ *   Bridge.params               — initial params passed from React Native (read-only)
  *   Bridge.send(type, payload)  — send a message to React Native
+ *   Bridge.close()              — signal React Native to close/unmount the WebView
  *   Bridge.on(type, handler)    — subscribe to messages from React Native (returns unsubscribe fn)
  *   Bridge.off(type, handler)   — unsubscribe a handler
  *   Bridge.on('*', handler)     — wildcard: receive all message types
@@ -31,16 +33,26 @@ export const BRIDGE_SCRIPT = `
     });
   }
 
+  function _send(type, payload) {
+    if (!window.ReactNativeWebView) {
+      console.warn('[Bridge] ReactNativeWebView not available');
+      return;
+    }
+    window.ReactNativeWebView.postMessage(
+      JSON.stringify({ type: type, payload: payload !== undefined ? payload : null })
+    );
+  }
+
   window.Bridge = {
+    /** Initial params injected by React Native via the initialParams prop (read-only) */
+    params: Object.freeze(window.__bridgeInitialParams || {}),
+
     /** Send a message to React Native */
-    send: function (type, payload) {
-      if (!window.ReactNativeWebView) {
-        console.warn('[Bridge] ReactNativeWebView not available');
-        return;
-      }
-      window.ReactNativeWebView.postMessage(
-        JSON.stringify({ type: type, payload: payload !== undefined ? payload : null })
-      );
+    send: _send,
+
+    /** Ask React Native to close/unmount this WebView (triggers the onClose prop) */
+    close: function () {
+      _send('__bridge_close__', null);
     },
 
     /** Listen for a message type from React Native. Returns an unsubscribe function. */
@@ -59,7 +71,7 @@ export const BRIDGE_SCRIPT = `
   };
 
   // Notify React Native that the bridge is ready
-  window.Bridge.send('__bridge_ready__', null);
+  _send('__bridge_ready__', null);
 })();
 true; // required by injectedJavaScriptBeforeContentLoaded
 `;
