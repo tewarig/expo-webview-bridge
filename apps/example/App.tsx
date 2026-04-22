@@ -6,7 +6,7 @@
  */
 import React, { useRef, useCallback, useState } from 'react';
 import { View, Button, Text, StyleSheet } from 'react-native';
-import { WebViewBridge, WebViewBridgeRef } from 'expo-webview-bridge';
+import { WebViewBridge, WebViewBridgeRef, BridgeError } from 'expo-webview-bridge';
 
 const HTML = `
 <!DOCTYPE html>
@@ -93,6 +93,10 @@ export default function App() {
     setWebViewVisible(false);
   }, []);
 
+  const handleError = useCallback((error: BridgeError) => {
+    console.error('[RN] Bridge error:', error.source, error.message, error.detail);
+  }, []);
+
   return (
     <View style={styles.container}>
       <Text style={styles.label}>React Native side</Text>
@@ -113,6 +117,7 @@ export default function App() {
           onMessage={handleMessage}
           onReady={handleReady}
           onClose={handleClose}
+          onError={handleError}
         />
       )}
     </View>

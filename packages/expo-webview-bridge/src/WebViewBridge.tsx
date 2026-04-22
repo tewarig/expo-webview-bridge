@@ -1,13 +1,14 @@
-import React, { forwardRef, useImperativeHandle, useCallback } from 'react';
+import React, { forwardRef, useImperativeHandle, useCallback, useRef } from 'react';
 import { WebView } from 'react-native-webview';
 import type { WebViewMessageEvent } from 'react-native-webview';
 import { BRIDGE_SCRIPT } from './bridgeScript';
 import { buildStorageScript } from './storageScript';
 import { useWebViewBridge } from './useWebViewBridge';
-import type { WebViewBridgeProps, WebViewBridgeRef } from './types';
+import type { BridgeError, WebViewBridgeProps, WebViewBridgeRef } from './types';
 
-const READY_TYPE = '__bridge_ready__';
-const CLOSE_TYPE = '__bridge_close__';
+const READY_TYPE  = '__bridge_ready__';
+const CLOSE_TYPE  = '__bridge_close__';
+const ERROR_TYPE  = '__bridge_error__';
 
 export const WebViewBridge = forwardRef<WebViewBridgeRef, WebViewBridgeProps>(
   function WebViewBridge(
@@ -15,6 +16,7 @@ export const WebViewBridge = forwardRef<WebViewBridgeRef, WebViewBridgeProps>(
       onMessage,
       onReady,
       onClose,
+      onError,
       initialParams,
       webStorage,
       injectedJavaScriptBeforeContentLoaded,
@@ -22,8 +24,13 @@ export const WebViewBridge = forwardRef<WebViewBridgeRef, WebViewBridgeProps>(
     },
     ref,
   ) {
+    // Use a ref so callbacks inside the hook never go stale without re-creating
+    // the hook's memoised functions.
+    const onErrorRef = useRef(onError);
+    onErrorRef.current = onError;
+
     const { webViewRef, sendMessage, on, off, dispatch, handleRawMessage } =
-      useWebViewBridge();
+      useWebViewBridge(onErrorRef);
 
     useImperativeHandle(ref, () => ({ sendMessage, on, off }), [
       sendMessage,
@@ -67,10 +74,15 @@ export const WebViewBridge = forwardRef<WebViewBridgeRef, WebViewBridgeProps>(
           return;
         }
 
+        if (msg.type === ERROR_TYPE) {
+          onErrorRef.current?.(msg.payload as BridgeError);
+          return;
+        }
+
         dispatch(msg.type, msg.payload);
         onMessage?.(msg.type, msg.payload);
       },
-      [handleRawMessage, dispatch, onMessage, onReady, onClose],
+      [handleRawMessage, dispatch, onMessage, onReady, onClose, onErrorRef],
     );
 
     return (

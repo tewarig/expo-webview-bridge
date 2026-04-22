@@ -29,7 +29,16 @@ export const BRIDGE_SCRIPT = `
     var typed = (_handlers[type] || []).slice();
     var wild  = (_handlers['*']   || []).slice();
     typed.concat(wild).forEach(function (h) {
-      try { h(payload, type); } catch (e) { console.error('[Bridge] handler error', e); }
+      try {
+        h(payload, type);
+      } catch (e) {
+        // Report handler exceptions back to React Native via onError
+        _send('__bridge_error__', {
+          source: 'webview-internal',
+          message: '[Bridge] handler threw: ' + (e && e.message ? e.message : String(e)),
+          detail: { type: type },
+        });
+      }
     });
   }
 

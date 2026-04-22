@@ -5,6 +5,19 @@ export interface BridgeMessage<T = unknown> {
   payload?: T;
 }
 
+/** Which side of the bridge produced the error */
+export type BridgeErrorSource =
+  | 'rn-to-webview'    // error sending a message from RN into the WebView
+  | 'webview-to-rn'    // error receiving / handling a message from the WebView
+  | 'webview-internal'; // a handler registered with Bridge.on() threw inside the WebView
+
+export interface BridgeError {
+  source: BridgeErrorSource;
+  message: string;
+  /** Original error object or extra context */
+  detail?: unknown;
+}
+
 export interface CookieConfig {
   name: string;
   value: string;
@@ -66,6 +79,12 @@ export interface WebViewBridgeProps
    * bridge initialisation.
    */
   webStorage?: WebStorageConfig;
+  /**
+   * Called whenever the bridge encounters an error in either direction.
+   * Covers: serialization failures, parse errors, handler exceptions, and
+   * errors reported back from Bridge.on() callbacks inside the WebView.
+   */
+  onError?: (error: BridgeError) => void;
   /** Extra JS to inject alongside the bridge script */
   injectedJavaScriptBeforeContentLoaded?: string;
 }
