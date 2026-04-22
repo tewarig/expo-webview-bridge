@@ -6,4 +6,6 @@ export type {
   Unsubscribe,
   WebViewBridgeRef,
   WebViewBridgeProps,
+  CookieConfig,
+  WebStorageConfig,
 } from './types';

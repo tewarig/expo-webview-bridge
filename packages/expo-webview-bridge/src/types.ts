@@ -5,6 +5,29 @@ export interface BridgeMessage<T = unknown> {
   payload?: T;
 }
 
+export interface CookieConfig {
+  name: string;
+  value: string;
+  /** Defaults to "/" */
+  path?: string;
+  domain?: string;
+  secure?: boolean;
+  sameSite?: 'Strict' | 'Lax' | 'None';
+  /** UTC date string e.g. "Fri, 31 Dec 2027 23:59:59 GMT" */
+  expires?: string;
+  /** Lifetime in seconds */
+  maxAge?: number;
+}
+
+export interface WebStorageConfig {
+  /** Cookies set via document.cookie before the page loads */
+  cookies?: CookieConfig[];
+  /** Key-value pairs written to localStorage before the page loads */
+  localStorage?: Record<string, string>;
+  /** Key-value pairs written to sessionStorage before the page loads */
+  sessionStorage?: Record<string, string>;
+}
+
 export type MessageHandler<T = unknown> = (payload: T, type: string) => void;
 
 export type Unsubscribe = () => void;
@@ -37,6 +60,16 @@ export interface WebViewBridgeProps
    * Injected before the page loads — useful for passing config, tokens, user info, etc.
    */
   initialParams?: Record<string, unknown>;
+  /**
+   * Query params appended to the source URI.
+   * Only applied when source is a { uri } object — ignored for inline HTML sources.
+   */
+  sourceParams?: Record<string, string>;
+  /**
+   * Cookies, localStorage, and sessionStorage entries written into the WebView
+   * before the page loads.
+   */
+  webStorage?: WebStorageConfig;
   /** Extra JS to inject alongside the bridge script */
   injectedJavaScriptBeforeContentLoaded?: string;
 }
