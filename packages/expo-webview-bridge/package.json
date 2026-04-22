@@ -1,5 +1,5 @@
 {
-  "name": "expo-webview-bridge",
+  "name": "@tewarig/expo-webview-bridge",
   "version": "0.1.0",
   "description": "Bidirectional message bridge between React Native and WebView for Expo",
   "main": "dist/index.js",

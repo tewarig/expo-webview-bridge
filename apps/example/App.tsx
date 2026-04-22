@@ -6,7 +6,7 @@
  */
 import React, { useRef, useCallback, useState } from 'react';
 import { View, Button, Text, StyleSheet } from 'react-native';
-import { WebViewBridge, WebViewBridgeRef, BridgeError } from 'expo-webview-bridge';
+import { WebViewBridge, WebViewBridgeRef, BridgeError } from '@tewarig/expo-webview-bridge';
 
 const HTML = `
 <!DOCTYPE html>
