@@ -4,8 +4,9 @@ A lightweight, fully-typed bidirectional message bridge between React Native and
 
 ## Preview
 
-[Watch the demo](assets/rn-web-view-example.mp4)
+<img src="assets/rn-web-view-example.gif" width="320" alt="expo-webview-bridge demo" />
 
+<video src="assets/rn-web-view-example.mp4" width="320" controls autoplay loop muted></video>
 
 ## Features
 
