@@ -1,5 +1,5 @@
 {
-  "name": "@tewarig/expo-webview-bridge",
+  "name": "@gaurav-tewari/expo-webview-bridge",
   "version": "0.1.0",
   "description": "Bidirectional message bridge between React Native and WebView for Expo",
   "main": "dist/index.js",
@@ -39,5 +39,8 @@
   "bugs": {
     "url": "https://github.com/tewarig/expo-webview-bridge/issues"
   },
-  "license": "MIT"
+  "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  }
 }
